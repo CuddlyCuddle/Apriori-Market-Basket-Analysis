@@ -1,0 +1,58 @@
+---
+title: "Apriori Recommendation Model"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(arules)
+library(arulesViz)
+```
+
+
+```{r}
+RetailData <- read_excel("data/Online Retail.xlsx")
+
+temp <- RetailData %>% select(InvoiceNo, StockCode)
+temp <- as.data.frame(temp)
+
+baskets <- as(split(temp[,"StockCode"], temp[,"InvoiceNo"]),"transactions")
+```
+
+
+
+# Exporatory Analysis
+```{r pressure, echo=FALSE}
+baskets  %>%
+   itemFrequencyPlot(topN=20,type="absolute", main="Absolute Item Frequency Plot")
+
+baskets  %>%
+   itemFrequencyPlot(topN=20,type="relative", main="Relative Item Frequency Plot")
+```
+
+```{r}
+a.rules <- apriori(baskets, parameter = list(support = 0.002, confidence = .8, maxlen=10))
+inspect(sort(a.rules, by = 'lift')[1:10])
+```
+
+```{r}
+plot(a.rules[quality(a.rules)$confidence > .8])
+
+```
+
+```{r}
+RetailData[which(RetailData$StockCode == "84997c"),]
+RetailData %>%
+  filter(StockCode %in% c("20723","21154","21155","21213","47566"))
+```
+
+
+```{r}
+top10Rules <- head(a.rules, n = 10, by = "lift")
+plot(top10Rules, method = "graph",  engine = "htmlwidget")
+plot(top10Rules, method="paracoord")
+```
